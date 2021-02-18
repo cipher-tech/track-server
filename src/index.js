@@ -1,30 +1,39 @@
-require("./models/User")
-const express = require("express")
-const Mongoose = require("mongoose")
-const authRoutes = require("./routes/authRoutes")
-const bodyParser = require("body-parser")
-const app = express()
-const password = "4DUJ6qEaQvmBbj4"
-const mongoURI ="mongodb+srv://admin:4DUJ6qEaQvmBbj4@cluster0.wwxiu.mongodb.net/Cluster0?retryWrites=true&w=majority"
+require('./models/User');
+require('./models/Track');
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const authRoutes = require('./routes/authRoutes');
+const trackRoutes = require('./routes/trackRoutes');
+const requireAuth = require('./middlewares/requireAuth');
 
-Mongoose.connect(mongoURI, {
-    useNewUrlParser: true,
-    useCreateIndex: true
-})
-Mongoose.connection.on("connected", () => {
-    console.log("connected mongoose");
-})
-Mongoose.connection.on("error", (err) => {
-    console.log("Error connecting to mongoose", err);
-})
+const app = express();
 
-app.use(bodyParser.json())
+app.use(bodyParser.json());
+app.use(authRoutes);
+app.use(trackRoutes);
 
-app.use(authRoutes)
-app.get("/", (req,res) => {
-    res.send("hi there")
-})
+const mongoUri = 'mongodb+srv://admin:4DUJ6qEaQvmBbj4@cluster0.wwxiu.mongodb.net/Cluster0?retryWrites=true&w=majority';
+if (!mongoUri) {
+  throw new Error(
+    `MongoURI was not supplied.  Make sure you watch the video on setting up Mongo DB!`
+  );
+}
+mongoose.connect(mongoUri, {
+  useNewUrlParser: true,
+  useCreateIndex: true
+});
+mongoose.connection.on('connected', () => {
+  console.log('Connected to mongo instance');
+});
+mongoose.connection.on('error', err => {
+  console.error('Error connecting to mongo', err);
+});
+
+app.get('/', requireAuth, (req, res) => {
+  res.send(`Your email: ${req.user.email}`);
+});
 
 app.listen(3000, () => {
-    console.log("running at 3000");
-})
+  console.log('Listening on port 3000');
+});
